@@ -1,0 +1,1338 @@
+<!doctype html>
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  مكتبتي — مكتبة أنمي خاصة (ملف واحد، بدون أي أدوات بناء)         ║
+  ║  افتحه في المتصفح أو من Acode (Preview) ، ويعمل كما هو.         ║
+  ╠══════════════════════════════════════════════════════════════════╣
+  ║  الإعداد لمرة واحدة:                                             ║
+  ║   1) أنشئ مشروعاً مجانياً في supabase.com                        ║
+  ║   2) شغّل كود SQL (زر «نسخ SQL» في شاشة الإعداد) في SQL Editor   ║
+  ║   3) Authentication ← عطّل Allow new users to sign up            ║
+  ║   4) Authentication ← Users ← أنشئ حسابك (Auto Confirm)          ║
+  ║   5) افتح هذا الملف والصق Project URL و anon key في شاشة الإعداد ║
+  ║      (أو ضعهما مباشرة في SUPABASE_URL / SUPABASE_ANON_KEY أدناه) ║
+  ╠══════════════════════════════════════════════════════════════════╣
+  ║  هيكل الملف:  CSS  ←  أدوات  ←  طبقة البيانات (api)  ←  المشغل   ║
+  ║               ←  الصفحات (Views)  ←  الموجّه (Router)  ←  التشغيل ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f0f14">
+<title>مكتبتي</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%239b87f5'/%3E%3Cpath d='M12 9.5v13l11-6.5z' fill='%230f0f14'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css">
+<script>
+  // الداكن هو الأساس؛ نطبّق الفاتح قبل أول رسم لتجنّب الوميض
+  try { if (localStorage.getItem("anime-lib:theme") === "light") document.documentElement.dataset.theme = "light"; } catch (e) {}
+</script>
+
+<style>
+/* ===================== 1) المتغيرات والألوان ===================== */
+:root {
+  --bg: #0f0f14;
+  --bg-blur: rgba(15, 15, 20, .82);
+  --fg: #f0f0f2;
+  --card: #16161c;
+  --muted: #202028;
+  --muted-fg: #9a9aa8;
+  --border: #272731;
+  --input: #30303c;
+  --primary: #9b87f5;
+  --primary-fg: #0f0f14;
+  --danger: #ef5b60;
+  --ok: #3fb97f;
+  --radius: 12px;
+  color-scheme: dark;
+}
+html[data-theme="light"] {
+  --bg: #fafafb;
+  --bg-blur: rgba(250, 250, 251, .85);
+  --fg: #15151b;
+  --card: #ffffff;
+  --muted: #efeff3;
+  --muted-fg: #5f5f6d;
+  --border: #e1e1e8;
+  --input: #d3d3de;
+  --primary: #6d4de6;
+  --primary-fg: #ffffff;
+  --danger: #d6363c;
+  --ok: #1f8f5a;
+  color-scheme: light;
+}
+
+/* ===================== 2) الأساسيات ===================== */
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.6;
+  min-height: 100vh;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: 0; padding: 0; }
+img, svg { display: block; max-width: 100%; }
+ul, ol { list-style: none; padding: 0; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--primary) 30%, transparent); }
+
+.container { max-width: 1280px; margin-inline: auto; padding-inline: 16px; }
+.container.narrow { max-width: 760px; }
+.container.mid { max-width: 1000px; }
+@media (min-width: 640px) { .container { padding-inline: 24px; } }
+.page { padding-block: 28px 48px; }
+.muted { color: var(--muted-fg); }
+.tnum { font-variant-numeric: tabular-nums; }
+.ltr { direction: ltr; unicode-bidi: plaintext; text-align: left; }
+.stack > * + * { margin-top: 16px; }
+
+/* ===================== 3) الأزرار والحقول ===================== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 40px; padding-inline: 16px; border-radius: 10px; white-space: nowrap;
+  font-size: .875rem; font-weight: 500; transition: background .15s, opacity .15s;
+  background: var(--primary); color: var(--primary-fg);
+}
+.btn:hover { opacity: .9; }
+.btn:disabled { opacity: .5; pointer-events: none; }
+.btn.lg { height: 44px; padding-inline: 24px; }
+.btn.sm { height: 32px; padding-inline: 12px; font-size: .75rem; }
+.btn.block { width: 100%; }
+.btn.outline { background: transparent; border: 1px solid var(--input); color: var(--fg); }
+.btn.outline:hover { background: var(--muted); opacity: 1; }
+.btn.ghost { background: transparent; color: var(--fg); }
+.btn.ghost:hover { background: var(--muted); opacity: 1; }
+.btn.disabled { opacity: .4; pointer-events: none; }
+
+.iconbtn {
+  display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 10px;
+  color: var(--muted-fg); transition: background .15s, color .15s;
+}
+.iconbtn:hover { background: var(--muted); color: var(--fg); }
+.iconbtn.danger:hover { color: var(--danger); }
+
+.field label { display: block; margin-bottom: 6px; font-size: .875rem; font-weight: 500; }
+.field .hint { margin-top: 6px; font-size: .75rem; color: var(--muted-fg); }
+.input, .textarea, .select {
+  width: 100%; border: 1px solid var(--input); border-radius: 10px; background: transparent;
+  padding-inline: 12px; font-size: .875rem;
+}
+.input, .select { height: 40px; }
+.textarea { padding-block: 8px; min-height: 96px; line-height: 1.7; resize: vertical; }
+.textarea.mono, .input.mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .75rem; }
+.input::placeholder, .textarea::placeholder { color: var(--muted-fg); opacity: .7; }
+.select option { background: var(--card); color: var(--fg); }
+.row-gap { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+
+/* ===================== 4) الترويسة ===================== */
+.header { position: sticky; top: 0; z-index: 40; border-bottom: 1px solid var(--border); background: var(--bg-blur); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.header .container { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 600; letter-spacing: -.01em; }
+.brand-mark { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--primary); color: var(--primary-fg); }
+.nav { display: flex; align-items: center; gap: 2px; }
+.i-sun { display: none; } html[data-theme="dark"] .i-sun { display: block; } html[data-theme="dark"] .i-moon { display: none; }
+
+/* ===================== 5) الشبكة والبطاقات ===================== */
+.section-title { display: flex; align-items: baseline; gap: 8px; font-size: 1.125rem; font-weight: 600; letter-spacing: -.01em; }
+.section-title .count { font-size: .875rem; font-weight: 400; color: var(--muted-fg); }
+.lib-head { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+@media (min-width: 640px) { .lib-head { flex-direction: row; align-items: center; justify-content: space-between; } }
+
+.search { position: relative; width: 100%; }
+@media (min-width: 640px) { .search { width: 288px; } }
+.search .input { padding-inline: 36px; }
+.search .s-icon { position: absolute; inset-inline-start: 12px; top: 50%; transform: translateY(-50%); color: var(--muted-fg); pointer-events: none; }
+.search .s-clear { position: absolute; inset-inline-end: 6px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; color: var(--muted-fg); }
+.search .s-clear:hover { background: var(--muted); color: var(--fg); }
+.search input::-webkit-search-cancel-button { display: none; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 24px 16px; }
+@media (min-width: 640px) { .grid { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); } }
+
+.poster { position: relative; aspect-ratio: 2 / 3; overflow: hidden; border-radius: var(--radius); background: var(--muted); box-shadow: 0 0 0 1px var(--border); transition: box-shadow .25s; }
+.poster img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s; }
+.poster .ph { display: grid; place-items: center; height: 100%; font-size: 2rem; font-weight: 600; color: var(--muted-fg); opacity: .5; }
+.card { display: block; border-radius: var(--radius); }
+.card:hover .poster, .card:focus-visible .poster { box-shadow: 0 0 0 1px var(--primary); }
+.card:hover .poster img { transform: scale(1.05); }
+.card h3 { margin-top: 8px; font-size: .875rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card .genre { font-size: .75rem; color: var(--muted-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.cont-row { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 4px; margin-inline: -16px; padding-inline: 16px; scrollbar-width: none; }
+.cont-row::-webkit-scrollbar { display: none; }
+@media (min-width: 640px) { .cont-row { margin-inline: 0; padding-inline: 0; } }
+.cont { flex: 0 0 144px; scroll-snap-align: start; }
+@media (min-width: 640px) { .cont { flex-basis: 160px; } }
+.cont .overlay { position: absolute; inset-inline: 0; bottom: 0; padding: 40px 10px 10px; background: linear-gradient(to top, rgba(0,0,0,.85), rgba(0,0,0,.4), transparent); color: #fff; }
+.cont .ep-label { display: flex; align-items: center; gap: 6px; font-size: .75rem; font-weight: 500; }
+.bar { height: 4px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.25); margin-top: 6px; }
+.bar > i { display: block; height: 100%; border-radius: 99px; background: var(--primary); }
+.bar.flat { background: var(--muted); max-width: 160px; }
+
+.empty { display: grid; place-items: center; padding: 72px 24px; text-align: center; border: 1px dashed var(--border); border-radius: var(--radius); }
+.empty p + p { margin-top: 4px; font-size: .875rem; color: var(--muted-fg); }
+.empty .btn { margin-top: 20px; }
+
+/* ===================== 6) صفحة الأنمي ===================== */
+.hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--border); isolation: isolate; }
+.hero-bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; opacity: .2; filter: blur(40px); transform: scale(1.3); }
+.hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to bottom, transparent, var(--bg)); }
+.back { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 20px; font-size: .875rem; color: var(--muted-fg); transition: color .15s; }
+.back:hover { color: var(--fg); }
+.hero-body { display: flex; flex-direction: column; gap: 24px; }
+@media (min-width: 640px) { .hero-body { flex-direction: row; gap: 32px; } }
+.hero .poster { width: 160px; flex-shrink: 0; box-shadow: 0 20px 50px rgba(0,0,0,.45), 0 0 0 1px var(--border); }
+@media (min-width: 640px) { .hero .poster { width: 224px; } }
+.hero-info { display: flex; flex-direction: column; justify-content: flex-end; min-width: 0; flex: 1; }
+.hero h1 { font-size: 1.5rem; line-height: 1.25; font-weight: 600; letter-spacing: -.02em; }
+@media (min-width: 640px) { .hero h1 { font-size: 2.25rem; } }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.chip { border: 1px solid var(--border); border-radius: 99px; padding: 2px 12px; font-size: .75rem; color: var(--muted-fg); }
+.synopsis { margin-top: 16px; max-width: 42rem; font-size: .875rem; line-height: 1.9; color: var(--muted-fg); white-space: pre-line; }
+.hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 24px; }
+
+.eps { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.eps li + li { border-top: 1px solid var(--border); }
+.ep { display: flex; align-items: center; gap: 16px; padding: 12px 16px; transition: background .15s; }
+.ep:hover { background: var(--muted); }
+.ep.target { background: var(--muted); background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.ep-num { display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px; border-radius: 8px; background: var(--muted); font-size: .875rem; font-weight: 500; }
+.ep-main { flex: 1; min-width: 0; }
+.ep-title { font-size: .875rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ep-side { display: flex; align-items: center; gap: 4px; font-size: .75rem; color: var(--muted-fg); }
+.ep-side .primary { color: var(--primary); font-weight: 500; }
+.ep-side svg { color: var(--primary); }
+
+/* ===================== 7) المشغل ===================== */
+.watch { max-width: 1000px; margin-inline: auto; }
+.player { background: #000; overflow: hidden; direction: ltr; }
+.video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
+@media (min-width: 640px) { .player { border-radius: var(--radius); } .watch { padding-top: 24px; } }
+.plyr { --plyr-color-main: var(--primary); --plyr-font-family: inherit; --plyr-control-radius: 8px; --plyr-menu-radius: 12px; --plyr-video-control-background-hover: var(--primary); --plyr-video-control-color-hover: var(--primary-fg); }
+.watch-info { padding: 20px 16px 48px; }
+@media (min-width: 640px) { .watch-info { padding-inline: 0; } }
+.watch-info h1 { font-size: 1.25rem; font-weight: 600; letter-spacing: -.01em; }
+.watch-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-top: 12px; }
+.notice { margin-top: 12px; padding: 12px; border-radius: 10px; font-size: .875rem; border: 1px solid var(--border); background: var(--card); }
+.notice.err { border-color: var(--danger); background: var(--card); border-color: color-mix(in srgb, var(--danger) 45%, transparent); background: color-mix(in srgb, var(--danger) 10%, transparent); }
+.notice.flex { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.notice a { text-decoration: underline; text-underline-offset: 4px; font-weight: 500; }
+
+/* ===================== 8) لوحة التحكم والنماذج ===================== */
+.panel { border: 1px solid var(--border); border-radius: 16px; background: var(--card); padding: 20px; }
+@media (min-width: 640px) { .panel { padding: 24px; } }
+.panel + .panel { margin-top: 24px; }
+.panel h2 { font-size: 1rem; font-weight: 600; letter-spacing: -.01em; }
+.panel .sub { margin-top: 4px; font-size: .875rem; color: var(--muted-fg); }
+.panel .body { margin-top: 20px; }
+.panel.flush { padding: 0; overflow: hidden; }
+.panel.flush > h2 { padding: 20px 20px 12px; }
+.form { display: grid; gap: 16px; }
+.form-top { display: flex; gap: 16px; }
+.form-top .col { flex: 1; min-width: 0; display: grid; gap: 16px; }
+.form-poster { display: none; width: 112px; flex-shrink: 0; align-self: start; }
+@media (min-width: 640px) { .form-poster { display: block; } }
+.lib-list > li { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
+.lib-list > li + li { border-top: 1px solid var(--border); }
+.lib-list .poster { width: 40px; flex-shrink: 0; border-radius: 6px; }
+.lib-list .poster .ph { font-size: 1rem; }
+.lib-list .name { flex: 1; min-width: 0; }
+.lib-list .name b { display: block; font-size: .875rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-list .name small { font-size: .75rem; color: var(--muted-fg); }
+.ep-admin { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 16px; }
+.ep-admin + .ep-admin { border-top: 1px solid var(--border); }
+.ep-admin .url { flex: 1; min-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .75rem; color: var(--muted-fg); }
+.ep-admin .num-in { width: 76px; }
+.ep-admin .url-in { flex: 1; min-width: 180px; }
+.head-line { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+h1.page-title { font-size: 1.5rem; font-weight: 600; letter-spacing: -.02em; }
+
+/* ===================== 9) الدخول والإعداد ===================== */
+.center-screen { display: grid; place-items: center; min-height: 100vh; min-height: 100dvh; padding: 24px 16px; }
+.auth { width: 100%; max-width: 384px; }
+.auth-head { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 28px; }
+.auth-head .brand-mark { width: 44px; height: 44px; border-radius: 12px; margin-bottom: 16px; }
+.auth-head h1 { font-size: 1.25rem; font-weight: 600; }
+.auth-head p { margin-top: 4px; font-size: .875rem; color: var(--muted-fg); }
+.auth .panel { padding: 24px; }
+.steps { padding-inline-start: 20px; list-style: decimal; font-size: .8125rem; color: var(--muted-fg); line-height: 1.9; }
+.link-btn { font-size: .75rem; color: var(--muted-fg); text-decoration: underline; text-underline-offset: 4px; }
+.link-btn:hover { color: var(--fg); }
+
+/* ===================== 10) تنبيهات وهياكل التحميل ===================== */
+.toasts { position: fixed; inset-inline: 16px; bottom: 20px; z-index: 100; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
+.toast { width: 100%; max-width: 420px; padding: 12px 16px; border-radius: 12px; font-size: .875rem; background: var(--card); border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,.4); opacity: 0; transform: translateY(8px); transition: opacity .25s, transform .25s; }
+.toast.show { opacity: 1; transform: none; }
+.toast.ok { border-inline-start: 3px solid var(--ok); }
+.toast.err { border-inline-start: 3px solid var(--danger); }
+.skel { background: var(--muted); border-radius: var(--radius); animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .5; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+
+<body>
+<div id="app"></div>
+
+<noscript><p style="padding:24px">يتطلب هذا الموقع تفعيل JavaScript.</p></noscript>
+
+<!-- المكتبات الخارجية: Supabase (الحساب وقاعدة البيانات) و Plyr (المشغل) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+
+<script>
+"use strict";
+
+/* ═════════════════════════════════════════════════════════════════
+   0) الإعدادات — يمكنك ملؤها هنا، أو تتركها فارغة وتدخلها من شاشة الإعداد
+   (anon key آمن للنشر في المتصفح لأن الحماية الفعلية تتم عبر RLS وتسجيل الدخول)
+   ═════════════════════════════════════════════════════════════════ */
+const SUPABASE_URL = "";       // مثال: "https://abcdxyz.supabase.co"
+const SUPABASE_ANON_KEY = "";  // مثال: "eyJhbGciOi..."
+
+/* الإعدادات التي تتحكم في سلوك المشغل */
+const PLAYER = {
+  remoteSaveMs: 10000,        // كل كم مللي ثانية يُحفظ التقدم في قاعدة البيانات
+  localSaveMs: 2000,          // كل كم مللي ثانية يُحفظ محلياً
+  completeRemainingSec: 45,   // إذا تبقّى أقل من هذا تُعتبر الحلقة مكتملة (شارة النهاية)
+  nextCountdownSec: 5,        // العدّ التنازلي قبل الانتقال التلقائي للحلقة التالية
+};
+
+/* كود SQL لإنشاء الجداول وسياسات الحماية (يُنسخ من زر «نسخ SQL») */
+const SCHEMA_SQL = `
+create extension if not exists "pgcrypto";
+
+create table if not exists public.anime (
+  id          uuid primary key default gen_random_uuid(),
+  title       text not null check (char_length(trim(title)) > 0),
+  genre       text,
+  synopsis    text,
+  poster_url  text,
+  created_at  timestamptz not null default now()
+);
+
+create table if not exists public.episodes (
+  id             uuid primary key default gen_random_uuid(),
+  anime_id       uuid not null references public.anime(id) on delete cascade,
+  episode_number integer not null check (episode_number > 0),
+  title          text,
+  video_url      text not null,
+  created_at     timestamptz not null default now(),
+  unique (anime_id, episode_number)
+);
+
+create table if not exists public.watch_progress (
+  episode_id       uuid primary key references public.episodes(id) on delete cascade,
+  anime_id         uuid not null references public.anime(id) on delete cascade,
+  position_seconds integer not null default 0 check (position_seconds >= 0),
+  duration_seconds integer,
+  completed        boolean not null default false,
+  updated_at       timestamptz not null default now()
+);
+
+create index if not exists watch_progress_anime_updated_idx on public.watch_progress (anime_id, updated_at desc);
+create index if not exists watch_progress_updated_idx on public.watch_progress (updated_at desc);
+create index if not exists anime_created_idx on public.anime (created_at desc);
+
+alter table public.anime          enable row level security;
+alter table public.episodes       enable row level security;
+alter table public.watch_progress enable row level security;
+
+drop policy if exists "anime_authenticated_all"          on public.anime;
+drop policy if exists "episodes_authenticated_all"       on public.episodes;
+drop policy if exists "watch_progress_authenticated_all" on public.watch_progress;
+
+create policy "anime_authenticated_all" on public.anime
+  for all to authenticated using (true) with check (true);
+create policy "episodes_authenticated_all" on public.episodes
+  for all to authenticated using (true) with check (true);
+create policy "watch_progress_authenticated_all" on public.watch_progress
+  for all to authenticated using (true) with check (true);
+`.trim();
+
+
+/* ═════════════════════════════════════════════════════════════════
+   1) أدوات عامة
+   ═════════════════════════════════════════════════════════════════ */
+
+/** ينشئ عنصر DOM بأمان (النصوص تُدرج كنص لا كـ HTML فلا مجال لحقن الأكواد) */
+function h(tag, props, ...children) {
+  const el = document.createElement(tag);
+  for (const [key, value] of Object.entries(props || {})) {
+    if (value == null || value === false) continue;
+    if (key === "class") el.className = value;
+    else if (key.startsWith("on") && typeof value === "function") el.addEventListener(key.slice(2), value);
+    else if (value === true) el.setAttribute(key, "");
+    else el.setAttribute(key, value);
+  }
+  for (const child of children.flat(Infinity)) {
+    if (child == null || child === false) continue;
+    el.append(child.nodeType ? child : document.createTextNode(String(child)));
+  }
+  return el;
+}
+
+/** أيقونات SVG ثابتة (محتوى موثوق من الكود فقط) */
+const ICONS = {
+  play: '<polygon points="6 3 20 12 6 21 6 3" fill="currentColor" stroke="none"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+  moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
+  sliders: '<path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  pencil: '<path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
+  trash: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  chevL: '<path d="m15 18-6-6 6-6"/>',
+  chevR: '<path d="m9 18 6-6-6-6"/>',
+  arrowR: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+};
+
+function icon(name, size = 18) {
+  const tpl = document.createElement("template");
+  tpl.innerHTML =
+    `<svg class="i-${name}" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" ` +
+    `fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
+  return tpl.content.firstChild;
+}
+
+function toast(message, type = "ok") {
+  let box = document.getElementById("toasts");
+  if (!box) { box = h("div", { id: "toasts", class: "toasts" }); document.body.append(box); }
+  const el = h("div", { class: `toast ${type}`, role: "status" }, message);
+  box.append(el);
+  requestAnimationFrame(() => el.classList.add("show"));
+  setTimeout(() => {
+    el.classList.remove("show");
+    setTimeout(() => el.remove(), 300);
+  }, 3400);
+}
+
+const errMsg = (e) => (e && e.message) || "حدث خطأ غير متوقع.";
+const str = (v) => String(v ?? "").trim();
+
+function isHttpUrl(value) {
+  try {
+    const u = new URL(value);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * يحوّل روابط المشاركة الشائعة إلى روابط مباشرة قدر الإمكان.
+ * تنبيه: Google Drive غير مخصص للبث؛ الأفضل Cloudflare R2 أو Backblaze B2.
+ */
+function normalizeVideoUrl(raw) {
+  const url = raw.trim();
+  const drive =
+    url.match(/drive\.google\.com\/file\/d\/([\w-]+)/) ||
+    url.match(/drive\.google\.com\/(?:open|uc)\?(?:[^#]*&)?id=([\w-]+)/);
+  if (drive) return `https://drive.google.com/uc?export=download&id=${drive[1]}`;
+  try {
+    const u = new URL(url);
+    if (/(^|\.)dropbox\.com$/.test(u.hostname)) {
+      u.searchParams.delete("dl");
+      u.searchParams.set("raw", "1");
+      return u.toString();
+    }
+  } catch { /* رابط غير صالح — يُرفض لاحقاً */ }
+  return url;
+}
+
+/** 75 → "1:15"  ،  3725 → "1:02:05" */
+function formatTime(totalSeconds) {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const hrs = Math.floor(s / 3600);
+  const min = Math.floor((s % 3600) / 60);
+  const sec = String(s % 60).padStart(2, "0");
+  return hrs > 0 ? `${hrs}:${String(min).padStart(2, "0")}:${sec}` : `${min}:${sec}`;
+}
+
+const splitGenres = (genre) =>
+  genre ? genre.split(/[,،|/]/).map((g) => g.trim()).filter(Boolean) : [];
+
+/** سطر لكل رابط؛ روابط Drive/Dropbox تُحوَّل تلقائياً */
+function parseLinks(raw) {
+  const urls = [], invalid = [];
+  for (const line of raw.split(/\r?\n/)) {
+    const value = line.trim();
+    if (!value) continue;
+    if (isHttpUrl(value)) urls.push(normalizeVideoUrl(value));
+    else invalid.push(value);
+  }
+  return { urls, invalid };
+}
+
+function invalidLinksMessage(invalid) {
+  const sample = invalid.slice(0, 2).map((l) => `«${l.length > 40 ? l.slice(0, 40) + "…" : l}»`).join("، ");
+  return `يوجد ${invalid.length} سطر ليس رابطاً صالحاً (يجب أن يبدأ بـ http أو https): ${sample}`;
+}
+
+/** يحدد أين يتابع المستخدم داخل أنمي؛ episodes مرتّبة تصاعدياً */
+function pickResumeTarget(episodes, latest) {
+  if (!episodes.length) return null;
+  const first = episodes[0];
+  if (!latest) return { episode: first, position: 0, state: "new" };
+  const i = episodes.findIndex((e) => e.id === latest.episode_id);
+  if (i === -1) return { episode: first, position: 0, state: "new" };
+  if (!latest.completed) return { episode: episodes[i], position: latest.position_seconds, state: "inProgress" };
+  const next = episodes[i + 1];
+  if (next) return { episode: next, position: 0, state: "inProgress" };
+  return { episode: first, position: 0, state: "finished" };
+}
+
+/** يعطّل الزر أثناء تنفيذ عملية غير متزامنة ويعرض الأخطاء */
+async function run(button, task) {
+  button.disabled = true;
+  try { await task(); } catch (e) { toast(errMsg(e), "err"); } finally { button.disabled = false; }
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const ta = h("textarea", { style: "position:fixed;opacity:0" }, text);
+    document.body.append(ta); ta.select(); document.execCommand("copy"); ta.remove();
+  }
+  toast("تم النسخ.");
+}
+
+
+/* ═════════════════════════════════════════════════════════════════
+   2) الاتصال وطبقة البيانات (كل استعلامات Supabase هنا)
+   ═════════════════════════════════════════════════════════════════ */
+const CONFIG_KEY = "anime-lib:config";
+let db = null;       // عميل Supabase
+let session = null;  // جلسة الدخول الحالية
+
+function loadConfig() {
+  if (SUPABASE_URL && SUPABASE_ANON_KEY) return { url: SUPABASE_URL, key: SUPABASE_ANON_KEY };
+  try {
+    const c = JSON.parse(localStorage.getItem(CONFIG_KEY) || "null");
+    if (c && c.url && c.key) return c;
+  } catch { /* تجاهل */ }
+  return null;
+}
+
+/** يجلب كل الصفوف على دفعات (الحد الافتراضي 1000 صف) — مهم للأنميات الطويلة */
+async function fetchAll(buildQuery) {
+  const size = 1000, all = [];
+  for (let from = 0; ; from += size) {
+    const { data, error } = await buildQuery().range(from, from + size - 1);
+    if (error) throw error;
+    all.push(...data);
+    if (data.length < size) break;
+  }
+  return all;
+}
+
+const must = ({ data, error }) => { if (error) throw error; return data; };
+
+const api = {
+  listAnime: () =>
+    fetchAll(() => db.from("anime").select("id,title,genre,poster_url").order("created_at", { ascending: false }).order("id")),
+
+  async getAnime(id) {
+    return must(await db.from("anime").select("*").eq("id", id).maybeSingle());
+  },
+
+  listEpisodes: (animeId, full = false) =>
+    fetchAll(() =>
+      db.from("episodes").select(full ? "*" : "id,anime_id,episode_number,title").eq("anime_id", animeId).order("episode_number")),
+
+  async getEpisode(id) {
+    return must(await db.from("episodes").select("*").eq("id", id).maybeSingle());
+  },
+
+  animeProgress: (animeId) =>
+    fetchAll(() => db.from("watch_progress").select("*").eq("anime_id", animeId).order("updated_at", { ascending: false }).order("episode_id")),
+
+  async episodeProgress(episodeId) {
+    return must(await db.from("watch_progress").select("*").eq("episode_id", episodeId).maybeSingle());
+  },
+
+  /** «أشاهده حالياً»: آخر حلقة في كل أنمي، وإن اكتملت نعرض التالية، وإن لم توجد نتجاهل الأنمي */
+  async continueWatching(limit = 12) {
+    const rows = must(await db.from("watch_progress").select("*").order("updated_at", { ascending: false }).limit(80));
+    if (!rows.length) return [];
+
+    const latestByAnime = new Map();
+    for (const r of rows) if (!latestByAnime.has(r.anime_id)) latestByAnime.set(r.anime_id, r);
+    const picks = [...latestByAnime.values()].slice(0, limit + 4);
+
+    const [animeRows, epRows] = await Promise.all([
+      db.from("anime").select("id,title,poster_url").in("id", picks.map((r) => r.anime_id)).then(must),
+      db.from("episodes").select("id,episode_number").in("id", picks.map((r) => r.episode_id)).then(must),
+    ]);
+    const animeById = new Map(animeRows.map((a) => [a.id, a]));
+    const numById = new Map(epRows.map((e) => [e.id, e.episode_number]));
+
+    const items = await Promise.all(picks.map(async (row) => {
+      const anime = animeById.get(row.anime_id);
+      const num = numById.get(row.episode_id);
+      if (!anime || num === undefined) return null;
+      if (!row.completed) {
+        const fraction = row.duration_seconds ? Math.min(1, row.position_seconds / row.duration_seconds) : 0;
+        return { anime, episodeId: row.episode_id, episodeNumber: num, fraction };
+      }
+      const next = must(await db.from("episodes").select("id,episode_number").eq("anime_id", row.anime_id)
+        .gt("episode_number", num).order("episode_number").limit(1).maybeSingle());
+      return next ? { anime, episodeId: next.id, episodeNumber: next.episode_number, fraction: 0 } : null;
+    }));
+    return items.filter(Boolean).slice(0, limit);
+  },
+
+  async listAdminAnime() {
+    return must(await db.from("anime").select("id,title,poster_url,episodes(count)").order("created_at", { ascending: false }));
+  },
+
+  async createAnime(fields) {
+    return must(await db.from("anime").insert(fields).select("id").single());
+  },
+  async updateAnime(id, fields) {
+    must(await db.from("anime").update(fields).eq("id", id));
+  },
+  async deleteAnime(id) {
+    must(await db.from("anime").delete().eq("id", id)); // الحلقات والتقدم تُحذف تلقائياً (CASCADE)
+  },
+
+  /** يضيف الروابط كحلقات مرقّمة تلقائياً بعد آخر حلقة (أو من رقم تحدده) */
+  async appendEpisodes(animeId, urls, startFrom) {
+    const last = must(await db.from("episodes").select("episode_number").eq("anime_id", animeId)
+      .order("episode_number", { ascending: false }).limit(1).maybeSingle());
+    const start = startFrom ?? ((last && last.episode_number) || 0) + 1;
+    const rows = urls.map((video_url, i) => ({ anime_id: animeId, episode_number: start + i, video_url }));
+    const { error } = await db.from("episodes").insert(rows);
+    if (error) {
+      throw new Error(error.code === "23505"
+        ? "تعارض في أرقام الحلقات: بعضها موجود مسبقاً. اترك خانة رقم البداية فارغة أو اختر رقماً آخر."
+        : error.message);
+    }
+    return { count: rows.length, first: start, last: start + rows.length - 1 };
+  },
+
+  async updateEpisode(id, fields) {
+    const { error } = await db.from("episodes").update(fields).eq("id", id);
+    if (error) throw new Error(error.code === "23505" ? "رقم الحلقة مستخدم مسبقاً." : error.message);
+  },
+  async deleteEpisode(id) {
+    must(await db.from("episodes").delete().eq("id", id));
+  },
+};
+
+
+/* ═════════════════════════════════════════════════════════════════
+   3) مكوّنات الواجهة المشتركة
+   ═════════════════════════════════════════════════════════════════ */
+
+/** صورة الغلاف 2:3 مع بديل (الحرف الأول) إذا كان الرابط فارغاً أو معطوباً */
+function Poster(src, title, ...overlay) {
+  const box = h("div", { class: "poster" });
+  const placeholder = () => h("div", { class: "ph" }, (title || "؟").trim().charAt(0));
+  if (src && isHttpUrl(src)) {
+    const img = h("img", { src, alt: title, loading: "lazy", decoding: "async", referrerpolicy: "no-referrer" });
+    img.addEventListener("error", () => img.replaceWith(placeholder()));
+    box.append(img);
+  } else {
+    box.append(placeholder());
+  }
+  box.append(...overlay);
+  return box;
+}
+
+function AnimeCard(anime) {
+  return h("a", { class: "card", href: `#/anime/${anime.id}` },
+    Poster(anime.poster_url, anime.title),
+    h("h3", {}, anime.title),
+    anime.genre && h("p", { class: "genre" }, anime.genre));
+}
+
+function ContinueCard(item) {
+  const percent = Math.round(item.fraction * 100);
+  const overlay = h("div", { class: "overlay" },
+    h("div", { class: "ep-label" }, icon("play", 12), `الحلقة ${item.episodeNumber}`),
+    h("div", { class: "bar", role: "progressbar", "aria-valuenow": percent, "aria-valuemin": 0, "aria-valuemax": 100 },
+      h("i", { style: `width:${percent}%` })));
+  return h("a", { class: "card cont", href: `#/watch/${item.episodeId}` },
+    Poster(item.anime.poster_url, item.anime.title, overlay),
+    h("h3", {}, item.anime.title));
+}
+
+/** حقل نموذج: تسمية + عنصر إدخال (يُربطان تلقائياً) + تلميح اختياري */
+let uid = 0;
+function Field(label, control, hint) {
+  const id = control.id || `f${++uid}`;
+  control.id = id;
+  return h("div", { class: "field" }, h("label", { for: id }, label), control, hint && h("p", { class: "hint" }, hint));
+}
+const cls = (...names) => names.filter(Boolean).join(" ");
+const Input = (props) => h("input", { ...props, class: cls("input", props.mono && "mono", props.class), mono: null });
+const Textarea = (props, value = "") => h("textarea", { ...props, class: cls("textarea", props.mono && "mono", props.class), mono: null }, value);
+
+function EmptyState(title, text, action) {
+  return h("div", { class: "empty" }, h("div", {}, h("p", {}, title), text && h("p", {}, text), action));
+}
+
+function NotFoundView() {
+  document.title = "غير موجود · مكتبتي";
+  return h("div", { class: "container page" },
+    EmptyState("الصفحة غير موجودة", "ربما حُذف المحتوى أو أن الرابط غير صحيح.",
+      h("a", { class: "btn outline", href: "#/" }, "العودة للمكتبة")));
+}
+
+function toggleTheme() {
+  const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("anime-lib:theme", next); } catch { /* التخزين غير متاح */ }
+}
+
+async function signOut() {
+  await db.auth.signOut();
+  session = null;
+  location.hash = "#/login";
+  route();
+}
+
+function Header() {
+  return h("header", { class: "header" },
+    h("div", { class: "container" },
+      h("a", { class: "brand", href: "#/" }, h("span", { class: "brand-mark" }, icon("play", 14)), "مكتبتي"),
+      h("nav", { class: "nav", "aria-label": "القائمة الرئيسية" },
+        h("a", { class: "iconbtn", href: "#/admin", title: "لوحة التحكم", "aria-label": "لوحة التحكم" }, icon("sliders")),
+        h("button", { class: "iconbtn", title: "تبديل الوضع", "aria-label": "تبديل الوضع الداكن/الفاتح", onclick: toggleTheme }, icon("sun"), icon("moon")),
+        h("button", { class: "iconbtn", title: "تسجيل الخروج", "aria-label": "تسجيل الخروج", onclick: signOut }, icon("logout")))));
+}
+
+function Skeleton() {
+  return h("div", { class: "container page", "aria-busy": "true" },
+    h("div", { class: "skel", style: "height:24px;width:128px;margin-bottom:24px" }),
+    h("div", { class: "grid" }, Array.from({ length: 12 }, () =>
+      h("div", {}, h("div", { class: "skel", style: "aspect-ratio:2/3" }), h("div", { class: "skel", style: "height:14px;width:70%;margin-top:8px" })))));
+}
+
+
+/* ═════════════════════════════════════════════════════════════════
+   4) المشغل (Plyr) + حفظ آخر دقيقة وصلت إليها
+   ═════════════════════════════════════════════════════════════════ */
+let cleanups = []; // دوال تُنفَّذ عند مغادرة الصفحة (إيقاف المشغل، إزالة المستمعات…)
+const teardown = () => { const fns = cleanups; cleanups = []; fns.forEach((fn) => { try { fn(); } catch { /* تجاهل */ } }); };
+
+const PLYR_AR = {
+  restart: "إعادة", rewind: "رجوع {seektime} ث", play: "تشغيل", pause: "إيقاف مؤقت", fastForward: "تقديم {seektime} ث",
+  seek: "تقديم/تأخير", played: "تم تشغيله", buffered: "تم تحميله", currentTime: "الوقت الحالي", duration: "المدة",
+  volume: "الصوت", mute: "كتم", unmute: "إلغاء الكتم", enterFullscreen: "ملء الشاشة", exitFullscreen: "إنهاء ملء الشاشة",
+  settings: "الإعدادات", pip: "نافذة عائمة", menuBack: "رجوع", speed: "السرعة", normal: "عادية",
+  disabled: "معطّل", enabled: "مفعّل", reset: "إعادة ضبط",
+};
+
+/**
+ * يهيّئ المشغل. يُستدعى بعد إدراج عنصر <video> في الصفحة.
+ * onCountdown(n) يُستدعى كل ثانية بعد انتهاء الحلقة؛ و null عند الإلغاء.
+ */
+function initPlayer({ video, episode, animeId, progress, nextId, autoplay, onFail, onCountdown }) {
+  const storageKey = `anime-lib:progress:${episode.id}`;
+  let ended = false, lastRemote = 0, lastLocal = 0, player = null, timer = null;
+
+  const readLocal = () => { try { return JSON.parse(localStorage.getItem(storageKey) || "null"); } catch { return null; } };
+  const writeLocal = (t) => { try { localStorage.setItem(storageKey, JSON.stringify({ t, at: Date.now() })); } catch { /* تجاهل */ } };
+
+  /** يحفظ التقدم محلياً (فوري) وفي قاعدة البيانات (يعمل من أي جهاز) */
+  const persist = (forceComplete = false) => {
+    const duration = Number.isFinite(video.duration) ? Math.floor(video.duration) : 0;
+    const position = Math.floor(video.currentTime);
+    const completed = forceComplete || (duration > 120 && duration - position <= PLAYER.completeRemainingSec);
+    if (position < 1 && !completed) return;
+
+    writeLocal(completed ? 0 : position);
+    lastRemote = Date.now();
+    db.from("watch_progress").upsert({
+      episode_id: episode.id,
+      anime_id: animeId,
+      position_seconds: completed ? 0 : position,
+      duration_seconds: duration || null,
+      completed,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "episode_id" }).then(() => {}, () => {}); // فشل الشبكة لا يقطع المشاهدة
+  };
+
+  // نقطة البداية: الأحدث بين قاعدة البيانات والتخزين المحلي
+  const local = readLocal();
+  let startAt = progress && !progress.completed ? progress.position_seconds : 0;
+  if (local && (!progress || local.at > Date.parse(progress.updated_at))) startAt = local.t;
+
+  const applyStart = () => {
+    if (startAt > 3 && (!Number.isFinite(video.duration) || startAt < video.duration - 15)) video.currentTime = startAt;
+    startAt = 0;
+  };
+
+  const on = {
+    loadedmetadata: applyStart,
+    timeupdate: () => {
+      if (video.currentTime < 1) return; // لا نكتب فوق التقدم المحفوظ قبل تطبيق نقطة البداية
+      const now = Date.now();
+      if (now - lastLocal >= PLAYER.localSaveMs) { lastLocal = now; writeLocal(Math.floor(video.currentTime)); }
+      if (now - lastRemote >= PLAYER.remoteSaveMs) persist();
+    },
+    pause: () => persist(),
+    seeked: () => { if (Date.now() - lastRemote > 3000) persist(); },
+    error: () => onFail(),
+    ended: () => {
+      ended = true;
+      persist(true);
+      if (!nextId) return;
+      let n = PLAYER.nextCountdownSec;
+      onCountdown(n);
+      timer = setInterval(() => {
+        n -= 1;
+        if (n <= 0) { clearInterval(timer); location.hash = `#/watch/${nextId}?autoplay=1`; }
+        else onCountdown(n);
+      }, 1000);
+    },
+  };
+  for (const [name, fn] of Object.entries(on)) video.addEventListener(name, fn);
+
+  const onHidden = () => { if (document.visibilityState === "hidden") persist(); };
+  const onPageHide = () => persist();
+  document.addEventListener("visibilitychange", onHidden);
+  window.addEventListener("pagehide", onPageHide);
+
+  video.src = episode.video_url;
+
+  if (window.Plyr) {
+    player = new Plyr(video, {
+      controls: ["play-large", "rewind", "play", "fast-forward", "progress", "current-time", "duration", "mute", "volume", "settings", "pip", "fullscreen"],
+      settings: ["speed"],
+      speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
+      seekTime: 10,
+      keyboard: { focused: true, global: true },
+      tooltips: { controls: true, seek: true },
+      ratio: "16:9",
+      i18n: PLYR_AR,
+    });
+  } else {
+    video.controls = true; // تعذّر تحميل Plyr (بدون اتصال) — نستخدم عناصر التحكم الأصلية
+  }
+  if (autoplay) video.play().catch(() => {});
+
+  cleanups.push(() => {
+    if (!ended) persist();
+    clearInterval(timer);
+    for (const [name, fn] of Object.entries(on)) video.removeEventListener(name, fn);
+    document.removeEventListener("visibilitychange", onHidden);
+    window.removeEventListener("pagehide", onPageHide);
+    if (player) player.destroy();
+    else video.pause();
+  });
+  return { cancelCountdown: () => { clearInterval(timer); onCountdown(null); } };
+}
+
+
+/* ═════════════════════════════════════════════════════════════════
+   5) الصفحات (Views) — كل دالة تُرجع عنصراً أو { el, afterMount }
+   ═════════════════════════════════════════════════════════════════ */
+
+/* ---------- 5.1 الإعداد (أول تشغيل) ---------- */
+function SetupView(problem) {
+  const url = Input({ type: "url", class: "ltr", placeholder: "https://xxxx.supabase.co", required: true, dir: "ltr" });
+  const key = Input({ type: "text", placeholder: "eyJhbGciOi…", required: true, dir: "ltr", mono: true, autocomplete: "off" });
+  const save = h("button", { class: "btn lg block", type: "submit" }, "حفظ والمتابعة");
+
+  const form = h("form", { class: "form", onsubmit: (e) => {
+    e.preventDefault();
+    const cfg = { url: str(url.value).replace(/\/+$/, ""), key: str(key.value) };
+    if (!isHttpUrl(cfg.url)) return toast("رابط المشروع غير صالح.", "err");
+    try { localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); } catch { return toast("تعذّر الحفظ على هذا المتصفح.", "err"); }
+    location.hash = "#/";
+    location.reload();
+  } },
+    Field("Project URL", url),
+    Field("anon public key", key, "من Supabase ← Project Settings ← API"),
+    save);
+
+  return h("div", { class: "center-screen" }, h("div", { class: "auth" },
+    h("div", { class: "auth-head" },
+      h("span", { class: "brand-mark" }, icon("play", 20)),
+      h("h1", {}, "إعداد مكتبتي"),
+      h("p", {}, problem || "خطوة واحدة لمرة واحدة فقط")),
+    h("div", { class: "panel" },
+      h("ol", { class: "steps" },
+        h("li", {}, "أنشئ مشروعاً مجانياً في supabase.com"),
+        h("li", {}, "انسخ كود SQL ثم الصقه في SQL Editor وشغّله"),
+        h("li", {}, "Authentication: عطّل Allow new users to sign up"),
+        h("li", {}, "Users: أنشئ حسابك (Auto Confirm)"),
+        h("li", {}, "الصق بيانات المشروع أدناه")),
+      h("button", { class: "btn outline block", type: "button", style: "margin-top:16px", onclick: () => copyText(SCHEMA_SQL) }, "نسخ كود SQL"),
+      h("div", { class: "body" }, form))));
+}
+
+/* ---------- 5.2 تسجيل الدخول ---------- */
+function LoginView() {
+  const email = Input({ type: "email", name: "email", dir: "ltr", autocomplete: "email", required: true });
+  const password = Input({ type: "password", name: "password", dir: "ltr", autocomplete: "current-password", required: true });
+  const submit = h("button", { class: "btn lg block", type: "submit" }, "دخول");
+  const error = h("p", { role: "alert", hidden: true, style: "color:var(--danger);font-size:.875rem" });
+
+  const form = h("form", { class: "form", onsubmit: (e) => {
+    e.preventDefault();
+    error.hidden = true;
+    run(submit, async () => {
+      const { data, error: err } = await db.auth.signInWithPassword({ email: str(email.value), password: password.value });
+      if (err || !data.session) { // رسالة موحّدة: لا نكشف هل البريد موجود أم لا
+        error.textContent = "بيانات الدخول غير صحيحة."; error.hidden = false; return;
+      }
+      session = data.session;
+      location.hash = "#/";
+      route();
+    });
+  } }, Field("البريد الإلكتروني", email), Field("كلمة المرور", password), error, submit);
+
+  document.title = "تسجيل الدخول · مكتبتي";
+  const reset = h("button", { class: "link-btn", type: "button", onclick: () => {
+    if (!confirm("مسح إعدادات الاتصال المحفوظة في هذا المتصفح؟")) return;
+    try { localStorage.removeItem(CONFIG_KEY); } catch { /* تجاهل */ }
+    location.reload();
+  } }, "تغيير إعدادات الاتصال");
+
+  return h("div", { class: "center-screen" }, h("div", { class: "auth" },
+    h("div", { class: "auth-head" },
+      h("span", { class: "brand-mark" }, icon("play", 20)),
+      h("h1", {}, "مكتبتي"),
+      h("p", {}, "مساحة خاصة — سجّل الدخول للمتابعة")),
+    h("div", { class: "panel" }, form),
+    !(SUPABASE_URL && SUPABASE_ANON_KEY) && h("p", { style: "text-align:center;margin-top:16px" }, reset)));
+}
+
+/* ---------- 5.3 الرئيسية ---------- */
+async function HomeView() {
+  const [animes, continueItems] = await Promise.all([api.listAnime(), api.continueWatching()]);
+  document.title = "مكتبتي";
+
+  const grid = h("div");
+  const input = h("input", { class: "input", type: "search", placeholder: "ابحث بالاسم أو التصنيف…  ( / )", "aria-label": "بحث في المكتبة" });
+  const clear = h("button", { class: "s-clear", type: "button", hidden: true, "aria-label": "مسح البحث", onclick: () => { input.value = ""; update(); input.focus(); } }, icon("x", 14));
+
+  function update() {
+    const q = input.value.trim().toLowerCase();
+    clear.hidden = !q;
+    const list = q ? animes.filter((a) => `${a.title} ${a.genre || ""}`.toLowerCase().includes(q)) : animes;
+    if (!animes.length) {
+      grid.replaceChildren(EmptyState("مكتبتك فارغة", "أضف أول أنمي من لوحة التحكم.", h("a", { class: "btn sm", href: "#/admin" }, "إضافة أنمي")));
+    } else if (!list.length) {
+      grid.replaceChildren(h("p", { class: "muted", style: "text-align:center;padding:72px 0;font-size:.875rem" }, `لا توجد نتائج لـ «${input.value.trim()}».`));
+    } else {
+      grid.replaceChildren(h("div", { class: "grid" }, list.map(AnimeCard)));
+    }
+  }
+  input.addEventListener("input", update);
+  update();
+
+  // اختصار "/" للانتقال السريع إلى البحث
+  const onKey = (e) => {
+    const t = e.target;
+    const typing = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
+    if (e.key === "/" && !typing) { e.preventDefault(); input.focus(); }
+  };
+  document.addEventListener("keydown", onKey);
+  cleanups.push(() => document.removeEventListener("keydown", onKey));
+
+  return h("main", { class: "container page" },
+    continueItems.length > 0 && h("section", { style: "margin-bottom:48px" },
+      h("h2", { class: "section-title", style: "margin-bottom:16px" }, "أشاهده حالياً"),
+      h("div", { class: "cont-row" }, continueItems.map(ContinueCard))),
+    h("section", {},
+      h("div", { class: "lib-head" },
+        h("h2", { class: "section-title" }, "المكتبة", h("span", { class: "count" }, animes.length)),
+        animes.length > 0 && h("div", { class: "search" }, h("span", { class: "s-icon" }, icon("search", 16)), input, clear)),
+      grid));
+}
+
+/* ---------- 5.4 صفحة الأنمي ---------- */
+async function AnimeView(id) {
+  const anime = await api.getAnime(id);
+  if (!anime) return NotFoundView();
+  const [episodes, progressRows] = await Promise.all([api.listEpisodes(id), api.animeProgress(id)]);
+  document.title = `${anime.title} · مكتبتي`;
+
+  const progressByEp = new Map(progressRows.map((p) => [p.episode_id, p]));
+  const target = pickResumeTarget(episodes, progressRows[0] || null); // الأول = آخر ما شوهد
+  const label = !target ? "" : target.state === "finished" ? "إعادة المشاهدة"
+    : target.state === "inProgress" ? `متابعة · الحلقة ${target.episode.episode_number}` : "ابدأ المشاهدة";
+
+  const genres = splitGenres(anime.genre);
+
+  const episodeRow = (ep) => {
+    const p = progressByEp.get(ep.id);
+    const isTarget = target && target.state !== "finished" && target.episode.id === ep.id;
+    const fraction = p && !p.completed && p.duration_seconds ? Math.min(1, p.position_seconds / p.duration_seconds) : 0;
+    let side = null;
+    if (p && p.completed) side = h("span", { class: "ep-side" }, icon("check", 16), "تمت المشاهدة");
+    else if (p && p.position_seconds > 0) side = h("span", { class: "ep-side tnum ltr" }, formatTime(p.position_seconds));
+    else if (isTarget) side = h("span", { class: "ep-side" }, h("span", { class: "primary" }, "التالية"));
+    return h("li", {}, h("a", { class: `ep ${isTarget ? "target" : ""}`, href: `#/watch/${ep.id}` },
+      h("span", { class: "ep-num tnum" }, ep.episode_number),
+      h("span", { class: "ep-main" },
+        h("span", { class: "ep-title", style: "display:block" }, ep.title || `الحلقة ${ep.episode_number}`),
+        fraction > 0 && h("span", { class: "bar flat", style: "display:block;margin-top:6px" }, h("i", { style: `width:${fraction * 100}%` }))),
+      side));
+  };
+
+  return h("main", {},
+    h("section", { class: "hero" },
+      anime.poster_url && isHttpUrl(anime.poster_url) && h("img", { class: "hero-bg", src: anime.poster_url, alt: "", "aria-hidden": "true", referrerpolicy: "no-referrer" }),
+      h("div", { class: "container mid", style: "padding-block:24px 40px" },
+        h("a", { class: "back", href: "#/" }, icon("arrowR", 16), "المكتبة"),
+        h("div", { class: "hero-body" },
+          Poster(anime.poster_url, anime.title),
+          h("div", { class: "hero-info" },
+            h("h1", {}, anime.title),
+            genres.length > 0 && h("ul", { class: "chips" }, genres.map((g) => h("li", { class: "chip" }, g))),
+            anime.synopsis && h("p", { class: "synopsis" }, anime.synopsis),
+            h("div", { class: "hero-actions" },
+              target
+                ? h("a", { class: "btn lg", href: `#/watch/${target.episode.id}` }, icon("play", 16), label)
+                : h("span", { class: "muted", style: "font-size:.875rem" }, "لا توجد حلقات بعد."),
+              h("span", { class: "muted", style: "font-size:.875rem" }, `${episodes.length} حلقة`)))))),
+    h("section", { class: "container mid page" },
+      h("h2", { class: "section-title", style: "margin-bottom:16px" }, "الحلقات"),
+      episodes.length === 0
+        ? EmptyState("لا توجد حلقات بعد", "أضف الحلقات من لوحة التحكم.", h("a", { class: "btn outline sm", href: `#/admin/anime/${anime.id}` }, "إضافة حلقات"))
+        : h("ol", { class: "eps" }, episodes.map(episodeRow))));
+}
+
+/* ---------- 5.5 صفحة المشاهدة ---------- */
+async function WatchView(episodeId, query) {
+  const episode = await api.getEpisode(episodeId);
+  if (!episode) return NotFoundView();
+  const [anime, episodes, progress] = await Promise.all([
+    api.getAnime(episode.anime_id), api.listEpisodes(episode.anime_id), api.episodeProgress(episode.id),
+  ]);
+  if (!anime) return NotFoundView();
+
+  const idx = episodes.findIndex((e) => e.id === episode.id);
+  const prev = idx > 0 ? episodes[idx - 1] : null;
+  const next = idx >= 0 && idx < episodes.length - 1 ? episodes[idx + 1] : null;
+  document.title = `${anime.title} · الحلقة ${episode.episode_number} · مكتبتي`;
+
+  const video = h("video", { class: "video", playsinline: true, preload: "metadata" });
+  const failBox = h("div", { class: "notice err", role: "alert", hidden: true },
+    "تعذّر تشغيل هذا الرابط. تأكد أنه رابط مباشر لملف فيديو (mp4/webm) وأنه متاح للقراءة. ",
+    h("a", { href: episode.video_url, target: "_blank", rel: "noreferrer" }, "فتح الرابط مباشرة"));
+  const countText = h("span");
+  let controls = null;
+  const countBox = h("div", { class: "notice flex", hidden: true }, countText,
+    h("button", { class: "btn outline sm", type: "button", onclick: () => controls && controls.cancelCountdown() }, "إلغاء"));
+
+  const navBtn = (ep, content, primary) => ep
+    ? h("a", { class: `btn sm ${primary ? "" : "outline"}`, href: `#/watch/${ep.id}` }, ...content)
+    : h("span", { class: `btn sm disabled ${primary ? "" : "outline"}` }, ...content);
+
+  const el = h("main", { class: "watch" },
+    h("div", { class: "player" }, video),
+    h("div", { class: "watch-info" },
+      failBox, countBox,
+      h("a", { class: "back", href: `#/anime/${anime.id}`, style: "margin:16px 0 0" }, icon("arrowR", 16), anime.title),
+      h("div", { class: "watch-bar" },
+        h("div", {},
+          h("h1", {}, episode.title || `الحلقة ${episode.episode_number}`),
+          h("p", { class: "muted", style: "font-size:.875rem" }, `الحلقة ${episode.episode_number} من ${episodes.length}`)),
+        h("div", { class: "row-gap", style: "gap:8px" },
+          navBtn(prev, [icon("chevR", 16), "السابقة"], false),
+          navBtn(next, ["التالية", icon("chevL", 16)], true)))));
+
+  return {
+    el,
+    afterMount() {
+      controls = initPlayer({
+        video, episode, animeId: anime.id, progress, nextId: next && next.id,
+        autoplay: query.get("autoplay") === "1",
+        onFail: () => { failBox.hidden = false; },
+        onCountdown: (n) => {
+          countBox.hidden = n === null;
+          if (n !== null) countText.textContent = `الحلقة التالية خلال ${n} ثوانٍ…`;
+        },
+      });
+    },
+  };
+}
+
+/* ---------- 5.6 نماذج الإدارة ---------- */
+/** نموذج إضافة أنمي (مع حلقاته اختيارياً) أو تعديل أنمي موجود */
+function AnimeForm(anime, onDone) {
+  const isEdit = Boolean(anime);
+  const title = Input({ name: "title", required: true, value: anime ? anime.title : "" });
+  const genre = Input({ name: "genre", placeholder: "أكشن، خيال، مغامرة", value: anime ? anime.genre || "" : "" });
+  const poster = Input({ name: "poster_url", type: "url", dir: "ltr", placeholder: "https://…/poster.jpg", value: anime ? anime.poster_url || "" : "" });
+  const synopsis = Textarea({ name: "synopsis", rows: 4 }, anime ? anime.synopsis || "" : "");
+  const links = Textarea({ name: "links", rows: 5, dir: "ltr", mono: true, placeholder: "https://cdn.example.com/ep1.mp4\nhttps://cdn.example.com/ep2.mp4" });
+  const submit = h("button", { class: "btn", type: "submit" }, isEdit ? "حفظ التعديلات" : "إضافة الأنمي");
+
+  const preview = h("div");
+  const updatePreview = () => preview.replaceChildren(Poster(str(poster.value) || null, str(title.value) || "؟"));
+  poster.addEventListener("change", updatePreview);
+  updatePreview();
+
+  return h("form", { class: "form", onsubmit: (e) => {
+    e.preventDefault();
+    run(submit, async () => {
+      const name = str(title.value);
+      if (!name) throw new Error("عنوان الأنمي مطلوب.");
+      const posterUrl = str(poster.value) || null;
+      if (posterUrl && !isHttpUrl(posterUrl)) throw new Error("رابط الغلاف غير صالح.");
+      const fields = { title: name, genre: str(genre.value) || null, synopsis: str(synopsis.value) || null, poster_url: posterUrl };
+
+      if (isEdit) {
+        await api.updateAnime(anime.id, fields);
+        toast("تم حفظ التعديلات.");
+      } else {
+        const { urls, invalid } = parseLinks(str(links.value));
+        if (invalid.length) throw new Error(invalidLinksMessage(invalid));
+        const created = await api.createAnime(fields);
+        let msg = `تمت إضافة «${name}».`;
+        if (urls.length) {
+          try { msg += ` وأُضيفت ${(await api.appendEpisodes(created.id, urls, null)).count} حلقة.`; }
+          catch (err) { toast(`أُضيف الأنمي لكن فشلت إضافة الحلقات: ${errMsg(err)}`, "err"); onDone(); return; }
+        }
+        toast(msg);
+      }
+      onDone();
+    });
+  } },
+    h("div", { class: "form-top" },
+      h("div", { class: "col" }, Field("عنوان الأنمي", title), Field("التصنيف", genre), Field("رابط صورة الغلاف", poster)),
+      h("div", { class: "form-poster" }, preview)),
+    Field("النبذة", synopsis),
+    !isEdit && Field("روابط الحلقات (اختياري)", links, "رابط في كل سطر — تُرقَّم تلقائياً بالترتيب (1، 2، 3…)."),
+    h("div", { class: "row-gap" }, submit));
+}
+
+/** إضافة حلقات دفعة واحدة: لأنمي محدد مسبقاً أو بالاختيار من قائمة */
+function EpisodesForm({ animeId, animes }, onDone) {
+  const select = animeId ? null : h("select", { class: "select", required: true },
+    h("option", { value: "", disabled: true, selected: true }, "اختر الأنمي…"),
+    ...animes.map((a) => h("option", { value: a.id }, a.title)));
+  const links = Textarea({ rows: 6, dir: "ltr", mono: true, required: true, placeholder: "https://cdn.example.com/ep1.mp4\nhttps://cdn.example.com/ep2.mp4\nhttps://cdn.example.com/ep3.mp4" });
+  const start = Input({ type: "number", min: 1, inputmode: "numeric", placeholder: "تلقائي" });
+  const submit = h("button", { class: "btn", type: "submit" }, "إضافة الحلقات");
+
+  return h("form", { class: "form", onsubmit: (e) => {
+    e.preventDefault();
+    run(submit, async () => {
+      const id = animeId || (select && select.value);
+      if (!id) throw new Error("اختر الأنمي أولاً.");
+      const { urls, invalid } = parseLinks(str(links.value));
+      if (invalid.length) throw new Error(invalidLinksMessage(invalid));
+      if (!urls.length) throw new Error("الصق رابطاً واحداً على الأقل (رابط في كل سطر).");
+      const raw = str(start.value);
+      const startFrom = raw ? Number(raw) : null;
+      if (startFrom !== null && (!Number.isInteger(startFrom) || startFrom < 1)) throw new Error("رقم البداية يجب أن يكون عدداً صحيحاً موجباً.");
+
+      const r = await api.appendEpisodes(id, urls, startFrom);
+      toast(r.count === 1 ? `أُضيفت الحلقة ${r.first}.` : `أُضيفت ${r.count} حلقات (من ${r.first} إلى ${r.last}).`);
+      onDone();
+    });
+  } },
+    select && Field("الأنمي", select),
+    Field("روابط الحلقات", links, "رابط مباشر في كل سطر. تُضاف بعد آخر حلقة موجودة وتُرقَّم تلقائياً."),
+    h("div", { style: "max-width:224px" }, Field("رقم الحلقة الأولى (اختياري)", start)),
+    h("div", { class: "row-gap" }, submit));
+}
+
+/** صف حلقة في صفحة إدارة الأنمي: عرض مختصر مع تعديل سريع وحذف */
+function EpisodeAdminRow(ep) {
+  const row = h("li", { class: "ep-admin" });
+
+  function showView() {
+    row.replaceChildren(
+      h("span", { class: "ep-num tnum", style: "width:32px;height:32px" }, ep.episode_number),
+      h("span", { class: "url ltr", title: ep.video_url }, ep.video_url),
+      h("button", { class: "iconbtn", type: "button", "aria-label": `تعديل الحلقة ${ep.episode_number}`, onclick: showEdit }, icon("pencil", 16)),
+      h("button", { class: "iconbtn danger", type: "button", "aria-label": `حذف الحلقة ${ep.episode_number}`, onclick: async (e) => {
+        if (!confirm(`حذف الحلقة ${ep.episode_number}؟`)) return;
+        await run(e.currentTarget, async () => { await api.deleteEpisode(ep.id); toast("تم الحذف."); route(); });
+      } }, icon("trash", 16)));
+  }
+
+  function showEdit() {
+    const num = Input({ type: "number", min: 1, required: true, value: ep.episode_number, class: "num-in", "aria-label": "رقم الحلقة" });
+    const url = Input({ type: "url", dir: "ltr", required: true, value: ep.video_url, mono: true, class: "url-in", "aria-label": "رابط الفيديو" });
+    const save = h("button", { class: "iconbtn", type: "submit", "aria-label": "حفظ" }, icon("check", 16));
+    const form = h("form", { style: "display:contents", onsubmit: (e) => {
+      e.preventDefault();
+      run(save, async () => {
+        const n = Number(num.value), u = str(url.value);
+        if (!isHttpUrl(u)) throw new Error("رابط الفيديو غير صالح.");
+        if (!Number.isInteger(n) || n < 1) throw new Error("رقم الحلقة غير صالح.");
+        await api.updateEpisode(ep.id, { episode_number: n, video_url: normalizeVideoUrl(u) });
+        toast("تم الحفظ.");
+        route();
+      });
+    } }, num, url, save,
+      h("button", { class: "iconbtn", type: "button", "aria-label": "إلغاء", onclick: showView }, icon("x", 16)));
+    row.replaceChildren(form);
+  }
+
+  showView();
+  return row;
+}
+
+/* ---------- 5.7 لوحة التحكم ---------- */
+function Panel(title, sub, body, cls = "") {
+  return h("section", { class: `panel ${cls}` }, h("h2", {}, title), sub && h("p", { class: "sub" }, sub), body && h("div", { class: "body" }, body));
+}
+
+async function AdminView() {
+  const animes = await api.listAdminAnime();
+  document.title = "لوحة التحكم · مكتبتي";
+  const refresh = () => route();
+
+  const libraryList = animes.length === 0
+    ? h("p", { class: "muted", style: "font-size:.875rem" }, "لا توجد أنميات بعد.")
+    : h("ul", { class: "lib-list" }, animes.map((a) => h("li", {},
+        Poster(a.poster_url, a.title),
+        h("div", { class: "name" }, h("b", {}, a.title), h("small", {}, `${(a.episodes && a.episodes[0] && a.episodes[0].count) || 0} حلقة`)),
+        h("a", { class: "btn ghost sm", href: `#/admin/anime/${a.id}` }, "إدارة", icon("chevL", 14)),
+        h("button", { class: "iconbtn danger", type: "button", "aria-label": `حذف ${a.title}`, onclick: async (e) => {
+          if (!confirm(`حذف «${a.title}» مع كل حلقاته وتقدم المشاهدة؟ لا يمكن التراجع.`)) return;
+          await run(e.currentTarget, async () => { await api.deleteAnime(a.id); toast("تم الحذف."); refresh(); });
+        } }, icon("trash", 18)))));
+
+  return h("main", { class: "container narrow page" },
+    h("div", { style: "margin-bottom:24px" },
+      h("h1", { class: "page-title" }, "لوحة التحكم"),
+      h("p", { class: "muted", style: "margin-top:4px;font-size:.875rem" }, "أضف الأنميات والحلقات دون لمس الكود.")),
+    Panel("إضافة أنمي جديد", "يمكنك لصق روابط الحلقات هنا مباشرة، وستُرقَّم تلقائياً.", AnimeForm(null, refresh)),
+    animes.length > 0 && Panel("إضافة حلقات لأنمي موجود", null, EpisodesForm({ animes: animes.map(({ id, title }) => ({ id, title })) }, refresh)),
+    Panel("إدارة المكتبة", null, libraryList),
+    h("p", { style: "margin-top:24px;text-align:center" },
+      h("button", { class: "link-btn", type: "button", onclick: () => copyText(SCHEMA_SQL) }, "نسخ كود SQL الخاص بقاعدة البيانات")));
+}
+
+async function ManageAnimeView(id) {
+  const anime = await api.getAnime(id);
+  if (!anime) return NotFoundView();
+  const episodes = await api.listEpisodes(id, true);
+  document.title = `إدارة · ${anime.title} · مكتبتي`;
+  const refresh = () => route();
+
+  return h("main", { class: "container narrow page" },
+    h("a", { class: "back", href: "#/admin" }, icon("arrowR", 16), "لوحة التحكم"),
+    h("div", { class: "head-line", style: "margin-bottom:24px" },
+      h("h1", { class: "page-title" }, anime.title),
+      h("a", { href: `#/anime/${anime.id}`, style: "color:var(--primary);font-size:.875rem" }, "عرض الصفحة")),
+    Panel("بيانات الأنمي", null, AnimeForm(anime, refresh)),
+    Panel("إضافة حلقات", null, EpisodesForm({ animeId: anime.id }, refresh)),
+    h("section", { class: "panel flush" },
+      h("h2", {}, "الحلقات ", h("span", { class: "muted tnum", style: "font-weight:400;font-size:.875rem" }, episodes.length)),
+      episodes.length === 0
+        ? h("p", { class: "muted", style: "padding:0 20px 24px;font-size:.875rem" }, "لا توجد حلقات بعد.")
+        : h("ul", { style: "border-top:1px solid var(--border)" }, episodes.map(EpisodeAdminRow))));
+}
+
+
+/* ═════════════════════════════════════════════════════════════════
+   6) الموجّه (Router) — يعتمد على الجزء بعد # في الرابط
+      #/            الرئيسية          #/anime/<id>        صفحة الأنمي
+      #/watch/<id>  المشاهدة          #/admin             لوحة التحكم
+      #/admin/anime/<id>  إدارة أنمي  #/login             الدخول
+   ═════════════════════════════════════════════════════════════════ */
+const appRoot = document.getElementById("app");
+let renderId = 0;
+
+function mountFull(node) { appRoot.replaceChildren(node); }
+
+/** الهيكل الثابت (الترويسة + المحتوى) يُنشأ مرة واحدة ويُستبدل محتواه فقط */
+function setMain(node) {
+  let main = document.getElementById("main");
+  if (!main) { main = h("div", { id: "main" }); appRoot.replaceChildren(Header(), main); }
+  main.replaceChildren(node);
+}
+
+async function route() {
+  const myRender = ++renderId;
+  teardown();
+
+  try {
+    if (!db) return mountFull(SetupView(window.__setupProblem));
+    if (!session) {
+      if (location.hash !== "#/login") { location.replace("#/login"); return; }
+      return mountFull(LoginView());
+    }
+
+    const raw = location.hash.replace(/^#\/?/, "");
+    const [pathStr, queryStr = ""] = raw.split("?");
+    const [a, b, c] = pathStr.split("/").filter(Boolean);
+    const query = new URLSearchParams(queryStr);
+
+    if (a === "login") { location.replace("#/"); return; }
+
+    setMain(Skeleton());
+    window.scrollTo(0, 0);
+
+    let out;
+    if (!a) out = await HomeView();
+    else if (a === "anime" && b) out = await AnimeView(b);
+    else if (a === "watch" && b) out = await WatchView(b, query);
+    else if (a === "admin" && b === "anime" && c) out = await ManageAnimeView(c);
+    else if (a === "admin" && !b) out = await AdminView();
+    else out = NotFoundView();
+
+    if (myRender !== renderId) return; // المستخدم انتقل لصفحة أخرى أثناء التحميل
+    setMain(out.el || out);
+    if (out.afterMount) out.afterMount();
+  } catch (e) {
+    if (myRender !== renderId) return;
+    setMain(h("div", { class: "container page" }, EmptyState("تعذّر تحميل الصفحة", errMsg(e),
+      h("button", { class: "btn outline", type: "button", onclick: () => route() }, "إعادة المحاولة"))));
+  }
+}
+
+
+/* ═════════════════════════════════════════════════════════════════
+   7) التشغيل
+   ═════════════════════════════════════════════════════════════════ */
+async function boot() {
+  window.addEventListener("hashchange", route);
+
+  const cfg = loadConfig();
+  if (!cfg) return route();
+
+  if (!window.supabase) {
+    window.__setupProblem = "تعذّر تحميل مكتبة Supabase — تحقق من الاتصال بالإنترنت ثم أعد تحميل الصفحة.";
+    return mountFull(SetupView(window.__setupProblem));
+  }
+
+  db = window.supabase.createClient(cfg.url, cfg.key, { auth: { persistSession: true, autoRefreshToken: true } });
+  const { data } = await db.auth.getSession();
+  session = data.session;
+
+  // نعيد الرسم فقط عند تغيّر حالة الدخول (تجنّب إعادة التحميل أثناء المشاهدة عند العودة للتبويب)
+  db.auth.onAuthStateChange((_event, s) => {
+    const had = Boolean(session);
+    session = s;
+    if (had !== Boolean(s)) route();
+  });
+
+  route();
+}
+
+boot();
+</script>
+</body>
+</html>
